@@ -1,12 +1,18 @@
 package com.casstime.net.example;
 
 import android.os.Bundle;
-import com.casstime.net.CTNetworkInitHelper;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
+import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import android.view.View;
+import com.casstime.net.*;
+import com.franmontiel.persistentcookiejar.PersistentCookieJar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import io.reactivex.Observable;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
+
+import java.util.List;
 
 public class MainJavaActivity extends AppCompatActivity {
 
@@ -30,6 +36,23 @@ public class MainJavaActivity extends AppCompatActivity {
         builder.setCacheStateSec((8 * 1024 * 1024));
         builder.setConnectTimeOut(8);
         builder.setReadTimeOut(8);
+
+        CTRetrofitFactory.Companion.getInstance()
+                .create(GitHubService.class)
+                .listRepos("")
+                .compose(new CTHttpTransformer<List<String>>())
+                .subscribe();
+
+        CTOkHttpClient.Companion.getInstance();
+
+        PersistentCookieJar cookieJar = CTCookieJarManager.Companion.getCookieJar();
+
+        CTCookieJarManager.Companion.clear();
+
     }
 
+    public interface GitHubService {
+        @GET("users/{user}/repos")
+        Observable<List<String>> listRepos(@Path("user") String user);
+    }
 }

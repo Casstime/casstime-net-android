@@ -1,14 +1,18 @@
 package com.casstime.net.example
 
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity;
 import android.view.Menu
 import android.view.MenuItem
-import com.casstime.net.CTNetworkInitHelper
-import com.casstime.net.CTRetrofitFactory
-
+import androidx.appcompat.app.AppCompatActivity
+import com.casstime.net.*
+import com.google.android.material.snackbar.Snackbar
+import io.reactivex.Observable
 import kotlinx.android.synthetic.main.activity_main.*
+import okhttp3.internal.http.CallServerInterceptor
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.http.GET
+import retrofit2.http.Path
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,13 +29,32 @@ class MainActivity : AppCompatActivity() {
         CTNetworkInitHelper.initWithApplication(application, "http://com.casstime.ec", !BuildConfig.DEBUG)
             .apply {
                 cacheStateSec = (5 * 1024 * 1024).toLong()
-                readTimeOut = 5L
-                connectTimeOut = 5L
+                readTimeOut = 5* 1000
+                connectTimeOut = 5 * 1000
+                interceptors = arrayOf(HttpLoggingInterceptor(), CallServerInterceptor(true))
             }
 
+
         CTRetrofitFactory.instance
+            .create(GitHubService::class.java)
+            .listRepos("")
+            .compose(CTHttpTransformer())
+            .subscribe()
+
+        CTOkHttpClient.instance
+
+        val cookieJar = CTCookieJarManager.cookieJar
+        cookieJar.clear()
+        CTCookieJarManager.clear()
 
     }
+
+    interface GitHubService {
+        @GET("users/{user}/repos")
+        fun listRepos(@Path("user") user: String): Observable<List<String>>
+    }
+
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
