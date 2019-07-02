@@ -5,6 +5,8 @@ import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.Menu
 import android.view.MenuItem
+import com.casstime.net.CTNetworkInitHelper
+import com.casstime.net.CTRetrofitFactory
 
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -19,6 +21,16 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
         }
+
+        CTNetworkInitHelper.initWithApplication(application, "http://com.casstime.ec", !BuildConfig.DEBUG)
+            .apply {
+                cacheStateSec = (5 * 1024 * 1024).toLong()
+                readTimeOut = 5L
+                connectTimeOut = 5L
+            }
+
+        CTRetrofitFactory.instance
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

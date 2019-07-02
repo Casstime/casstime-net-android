@@ -9,10 +9,10 @@ import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersisto
  * Created by maiwenchang at 2019/3/23 4:27 PM
  * Description ：CookieJar管理类，负责CookieJar的创建和清除
  */
-class CECCookieJarManager private constructor() {
+class CTCookieJarManager private constructor() {
 
     private object SingletonHolder {
-        val holder: PersistentCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(CECNetworkInitHelper.getApplication()))
+        val holder: PersistentCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(CTNetworkInitHelper.application))
     }
 
     companion object {

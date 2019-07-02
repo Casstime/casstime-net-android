@@ -8,19 +8,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 /*
     Retrofit工厂，单例
  */
-class RetrofitFactory private constructor() {
+class CTRetrofitFactory private constructor() {
 
     /*
         单例实现
      */
     companion object {
-        val instance: RetrofitFactory by lazy { RetrofitFactory() }
-//        const val BASE_URL = CECNetworkInitHelper.getBaseUrl()
-        const val TERMINAL_API = "terminal-api"
-        const val TERMINAL_API_V2 = "terminal-api-v2"
-        const val READ_TIME_OUT: Long = 20*1000                             //读取超时
-        const val CONNECT_TIME_OUT: Long = 20*1000                           //连接超时
-        const val CACHE_STALE_SEC = (10 * 1024 * 1024).toLong()  //缓存大小
+        val instance: CTRetrofitFactory by lazy { CTRetrofitFactory() }
     }
 
     private val retrofit: Retrofit
@@ -28,7 +22,7 @@ class RetrofitFactory private constructor() {
     //初始化
     init {
         //Retrofit实例化
-        retrofit = initRetrofit(CECNetworkInitHelper.getBaseUrl())
+        retrofit = initRetrofit(CTNetworkInitHelper.baseUrl)
     }
 
     /*
@@ -39,7 +33,7 @@ class RetrofitFactory private constructor() {
                 .baseUrl(baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .client(CECOkHttpClient.instance)
+                .client(CTOkHttpClient.instance)
                 .build()
     }
 
