@@ -38,11 +38,11 @@ object CTNetworkInitHelper {
 
         var interceptors: Array<Interceptor> = emptyArray()
 
-        var cacheStateSec: Long = 20 * 1000
+        var cacheStateSec: Long = (10 * 1024 * 1024).toLong()
 
         var readTimeOut: Long = 20 * 1000
 
-        var connectTimeOut: Long = (10 * 1024 * 1024).toLong()
+        var connectTimeOut: Long = 20 * 1000
 
     }
 }
