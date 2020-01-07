@@ -36,6 +36,8 @@ object CTNetworkInitHelper {
 
     object Builder {
 
+        var convertFactories: Array<retrofit2.Converter.Factory> = emptyArray()
+
         var interceptors: Array<Interceptor> = emptyArray()
 
         var cacheStateSec: Long = (10 * 1024 * 1024).toLong()

@@ -1,17 +1,22 @@
 package com.casstime.net.example
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import com.casstime.net.*
+import com.casstime.net.CTCookieJarManager
+import com.casstime.net.CTHttpTransformer
+import com.casstime.net.CTNetworkInitHelper
+import com.casstime.net.CTRetrofitFactory
+import com.casstime.net.example.converter.CTGsonConverterFactory
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_main.*
-import okhttp3.internal.http.CallServerInterceptor
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.http.GET
-import retrofit2.http.Path
 
 
 class MainActivity : AppCompatActivity() {
@@ -23,25 +28,43 @@ class MainActivity : AppCompatActivity() {
 
         fab.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
+                .setAction("Action", null).show()
         }
 
-        CTNetworkInitHelper.initWithApplication(application, "http://com.casstime.ec", !BuildConfig.DEBUG)
+        CTNetworkInitHelper.initWithApplication(application, "https://ec-test.casstime.com", false)
             .apply {
                 cacheStateSec = (5 * 1024 * 1024).toLong()
-                readTimeOut = 5* 1000
+                readTimeOut = 5 * 1000
                 connectTimeOut = 5 * 1000
-                interceptors = arrayOf(HttpLoggingInterceptor(), CallServerInterceptor(true))
+                interceptors = arrayOf(HttpLoggingInterceptor())
+                convertFactories = arrayOf(CTGsonConverterFactory.create())
             }
 
 
         CTRetrofitFactory.instance
             .create(GitHubService::class.java)
-            .listRepos("")
+            .listRepos()
             .compose(CTHttpTransformer())
-            .subscribe()
+            .subscribe(object : Observer<CTResponse> {
+                override fun onComplete() {
+                    Log.i("onComplete", "onComplete")
+                }
 
-        CTOkHttpClient.instance
+                override fun onSubscribe(d: Disposable) {
+                    Log.i("onSubscribe", "onSubscribe")
+
+                }
+
+                override fun onNext(t: CTResponse) {
+                    Log.i("onNext", t.toString())
+                }
+
+                override fun onError(e: Throwable) {
+                    Log.i("onError", "onError")
+
+                }
+
+            })
 
         val cookieJar = CTCookieJarManager.cookieJar
         cookieJar.clear()
@@ -50,10 +73,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     interface GitHubService {
-        @GET("users/{user}/repos")
-        fun listRepos(@Path("user") user: String): Observable<List<String>>
+        @GET("/terminal-api-v2/perferences/app_config")
+        fun listRepos(): Observable<CTResponse>
     }
-
 
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

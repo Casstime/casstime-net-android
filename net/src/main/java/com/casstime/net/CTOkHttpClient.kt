@@ -24,11 +24,8 @@ class CTOkHttpClient private constructor() {
                 .readTimeout(CTNetworkInitHelper.Builder.readTimeOut, TimeUnit.MILLISECONDS)
                 .connectTimeout(CTNetworkInitHelper.Builder.connectTimeOut, TimeUnit.MILLISECONDS)
                 .apply {
-                    val interceptors = CTNetworkInitHelper.Builder.interceptors
-                    if (!interceptors.isEmpty()) {
-                        for (interceptor in interceptors) {
-                            addInterceptor(interceptor)
-                        }
+                    for (interceptor in CTNetworkInitHelper.Builder.interceptors) {
+                        addInterceptor(interceptor)
                     }
                 }
                 .apply {
@@ -56,6 +53,8 @@ class CTOkHttpClient private constructor() {
     companion object {
 
         val instance by lazy { SingletonHolder.holder }
+
+        val convertFactories by lazy { CTNetworkInitHelper.Builder.convertFactories }
 
     }
 }

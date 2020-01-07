@@ -29,12 +29,17 @@ class CTRetrofitFactory private constructor() {
         日志拦截器
      */
     private fun initRetrofit(baseUrl: String): Retrofit {
-       return Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .client(CTOkHttpClient.instance)
-                .build()
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .apply {
+                for (factory in CTOkHttpClient.convertFactories) {
+                    addConverterFactory(factory)
+                }
+            }
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .client(CTOkHttpClient.instance)
+            .build()
     }
 
     /*
