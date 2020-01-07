@@ -2,7 +2,7 @@ package com.casstime.net.example.converter;
 
 import android.util.Log;
 
-import com.casstime.net.BuildConfig;
+import com.casstime.net.example.BuildConfig;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.internal.$Gson$Types;
