@@ -32,6 +32,8 @@ public class CTGsonConverterFactory extends Converter.Factory {
 
     private static final String TAG = CTGsonConverterFactory.class.getSimpleName();
 
+    private static final String SKIP_NOTE = " skip verify Interface";
+
     private final Map<String, Object> typeTokenCache = new ConcurrentHashMap<>();
 
     /**
@@ -76,7 +78,7 @@ public class CTGsonConverterFactory extends Converter.Factory {
     }
 
     /**
-     * 检查是否实现 Serializable 或 ICECBaseBean 接口
+     * 检查该类及其成员变量、泛型参数类型是否实现 Serializable 或 ICECBaseBean 接口
      *
      * @param typeToken
      */
@@ -112,43 +114,26 @@ public class CTGsonConverterFactory extends Converter.Factory {
         final boolean skipSerialize = Excluder.DEFAULT.excludeClass(typeToken.getRawType(), true);
         final boolean skipDeserialize = Excluder.DEFAULT.excludeClass(typeToken.getRawType(), false);
         if (!skipSerialize && !skipDeserialize) {
+            Log.i(TAG,typeToken.getRawType().getName() + SKIP_NOTE);
             return;
         }
 
         Object cached = typeTokenCache.get(typeToken.getRawType().getName());
         if (cached != null) {
-            Log.i(TAG, typeToken.getRawType().getName() + " skip verify Interface");
+            Log.i(TAG,typeToken.getRawType().getName() + SKIP_NOTE);
         } else {
-            boolean isImplemented = false;
-            Class<?> rawType = typeToken.getRawType();
-            while (rawType != null && rawType != Object.class) {
-                Type[] interfaces = rawType.getGenericInterfaces();
-                for (Type impl : interfaces) {
-                    if (impl instanceof Serializable || impl instanceof ICECBaseBean) {
-                        isImplemented = true;
-                        typeTokenCache.put(typeToken.getRawType().getName(), Object.class);
-                        Log.i(TAG, typeToken.getRawType().getName() + " implemented " + impl.toString());
-                        break;
-                    }
-                }
-                if (isImplemented) {
-                    break;
-                }
-                Type resolve = $Gson$Types.resolve(typeToken.getType(), rawType, rawType.getGenericSuperclass());
-                if (resolve == null) {
-                    break;
-                }
-                typeToken = TypeToken.get(resolve);
-                rawType = typeToken.getRawType();
-            }
-
-            if (!isImplemented) {
-                throw new IllegalArgumentException(typeToken.getRawType().getName() + " must be implemented Serializable or ICECBaseBean");
-            }
+            //检查自己的接口实现
+            verifySelfInterface(typeToken);
         }
 
-
         //处理成员变量
+        verifyFieldInterface(typeToken);
+    }
+
+    /**
+     * 检查成员变量是否实现了 Serializable 或 ICECBaseBean 接口
+     */
+    private void verifyFieldInterface(TypeToken<?> typeToken) {
         Class<?> raw = typeToken.getRawType();
         while (raw != Object.class) {
             Field[] fields = raw.getDeclaredFields();
@@ -156,7 +141,7 @@ public class CTGsonConverterFactory extends Converter.Factory {
                 boolean serialize = Excluder.DEFAULT.excludeField(field, true);
                 boolean deserialize = Excluder.DEFAULT.excludeField(field, false);
                 if (serialize || deserialize) {
-                    Log.i(TAG, typeToken.getRawType().getName() + "#" + field.getName() + " skip verify Interface");
+                    Log.i(TAG,typeToken.getRawType().getName() + "#@Transient " + field.getName() + SKIP_NOTE);
                     continue;
                 }
                 Type fieldType = $Gson$Types.resolve(typeToken.getType(), raw, field.getGenericType());
@@ -173,8 +158,43 @@ public class CTGsonConverterFactory extends Converter.Factory {
         }
     }
 
+
     /**
-     * 检查泛型参数
+     * 检查该类是否实现了 Serializable 或 ICECBaseBean 接口
+     *
+     * @param typeToken
+     */
+    private void verifySelfInterface(TypeToken<?> typeToken) {
+        boolean isImplemented = false;
+        Class<?> rawType = typeToken.getRawType();
+        while (rawType != null && rawType != Object.class) {
+            Type[] interfaces = rawType.getGenericInterfaces();
+            for (Type impl : interfaces) {
+                if (impl instanceof Serializable || impl instanceof ICECBaseBean) {
+                    isImplemented = true;
+                    typeTokenCache.put(typeToken.getRawType().getName(), Object.class);
+                    Log.i(TAG, typeToken.getRawType().getName() + " implemented " + impl.toString());
+                    break;
+                }
+            }
+            if (isImplemented) {
+                break;
+            }
+            Type resolve = $Gson$Types.resolve(typeToken.getType(), rawType, rawType.getGenericSuperclass());
+            if (resolve == null) {
+                break;
+            }
+            typeToken = TypeToken.get(resolve);
+            rawType = typeToken.getRawType();
+        }
+
+        if (!isImplemented) {
+            throw new IllegalArgumentException(typeToken.getRawType().getName() + " must be implemented Serializable or ICECBaseBean");
+        }
+    }
+
+    /**
+     * 检查泛型参数是否实现了 Serializable 或 ICECBaseBean 接口
      *
      * @param arguments Type
      */
@@ -197,7 +217,7 @@ public class CTGsonConverterFactory extends Converter.Factory {
     }
 
     /**
-     * 判断是否基本数据类型及其封装类、String类型
+     * 判断是否基本数据类型及其封装类、String类型、Object类型
      *
      * @param type Type
      * @return boolean
