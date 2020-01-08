@@ -90,6 +90,8 @@ public class CTGsonConverterFactory extends Converter.Factory {
             return;
         }
         Type type = typeToken.getType();
+        Class<?> rawType = typeToken.getRawType();
+
 
         if (type instanceof ParameterizedType) {
             //带泛型的集合类
@@ -100,27 +102,32 @@ public class CTGsonConverterFactory extends Converter.Factory {
         if (type == null) {
             return;
         }
-        if (isBaseType(type)) {
+
+        if (rawType == null) {
+            return;
+        }
+
+        if (isBaseType(rawType)) {
             //忽略基本数据类型及其封装类、String类型
             return;
         }
 
-        if (isJavaClass(typeToken.getRawType())) {
+        if (isJavaClass(rawType)) {
             //忽略java类
             return;
         }
 
         //跳过@Since并@Until 的类
-        final boolean skipSerialize = Excluder.DEFAULT.excludeClass(typeToken.getRawType(), true);
-        final boolean skipDeserialize = Excluder.DEFAULT.excludeClass(typeToken.getRawType(), false);
+        final boolean skipSerialize = Excluder.DEFAULT.excludeClass(rawType, true);
+        final boolean skipDeserialize = Excluder.DEFAULT.excludeClass(rawType, false);
         if (!skipSerialize && !skipDeserialize) {
-            Log.i(TAG,typeToken.getRawType().getName() + SKIP_NOTE);
+            Log.i(TAG, rawType.getName() + SKIP_NOTE);
             return;
         }
 
-        Object cached = typeTokenCache.get(typeToken.getRawType().getName());
+        Object cached = typeTokenCache.get(rawType.getName());
         if (cached != null) {
-            Log.i(TAG,typeToken.getRawType().getName() + SKIP_NOTE);
+            Log.i(TAG, rawType.getName() + SKIP_NOTE);
         } else {
             //检查自己的接口实现
             verifySelfInterface(typeToken);
