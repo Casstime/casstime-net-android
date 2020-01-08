@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
             .create(GitHubService::class.java)
             .listRepos()
             .compose(CTHttpTransformer())
-            .subscribe(object : Observer<CTResponse> {
+            .subscribe(object : Observer<CTResponse<CTResponse.DataBean<CTResponse.Rain>>> {
                 override fun onComplete() {
                     Log.i("onComplete", "onComplete")
                 }
@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 
                 }
 
-                override fun onNext(t: CTResponse) {
+                override fun onNext(t: CTResponse<CTResponse.DataBean<CTResponse.Rain>>) {
                     Log.i("onNext", t.toString())
                 }
 
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
 
     interface GitHubService {
         @GET("/terminal-api-v2/perferences/app_config")
-        fun listRepos(): Observable<CTResponse>
+        fun listRepos(): Observable<CTResponse<CTResponse.DataBean<CTResponse.Rain>>>
     }
 
 

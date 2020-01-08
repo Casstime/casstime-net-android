@@ -32,7 +32,7 @@ public class CTGsonConverterFactory extends Converter.Factory {
 
     private static final String TAG = CTGsonConverterFactory.class.getSimpleName();
 
-    private final Map<TypeToken<?>, Object> typeTokenCache = new ConcurrentHashMap<>();
+    private final Map<String, Object> typeTokenCache = new ConcurrentHashMap<>();
 
     /**
      * Create an instance using a default {@link Gson} instance for conversion. Encoding to JSON and
@@ -63,8 +63,7 @@ public class CTGsonConverterFactory extends Converter.Factory {
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type t, Annotation[] annotations, Retrofit retrofit) {
         TypeToken<?> type = TypeToken.get(t);
-        Type[] interfaces = type.getRawType().getGenericInterfaces();
-        verifyInterface(type, interfaces);
+        verifyInterface(type);
         TypeAdapter<?> adapter = gson.getAdapter(type);
         return new CTGsonResponseBodyConverter<>(gson, adapter);
     }
@@ -79,93 +78,121 @@ public class CTGsonConverterFactory extends Converter.Factory {
     /**
      * 检查是否实现 Serializable 或 ICECBaseBean 接口
      *
-     * @param type
-     * @param interfaces
+     * @param typeToken
      */
-    private void verifyInterface(TypeToken<?> type, Type[] interfaces) {
+    private void verifyInterface(TypeToken<?> typeToken) {
         if (!BuildConfig.DEBUG) {
             return;
         }
+        if (typeToken == null) {
+            return;
+        }
+        Type type = typeToken.getType();
+
+        if (type instanceof ParameterizedType) {
+            //带泛型的集合类
+            Type[] arguments = ((ParameterizedType) type).getActualTypeArguments();
+            verifyTypeArguments(arguments);
+        }
+
         if (type == null) {
             return;
         }
-        Object cached = typeTokenCache.get(type);
-        if (cached != null) {
-            Log.i(TAG, type.toString() + " skip verify Interface");
+        if (isBaseType(type)) {
+            //忽略基本数据类型及其封装类、String类型
             return;
         }
 
-        boolean isImplemented = false;
-        for (Type impl : interfaces) {
-            if (impl instanceof Serializable || impl instanceof ICECBaseBean) {
-                isImplemented = true;
-                typeTokenCache.put(type, Object.class);
-                Log.i(TAG, type.toString() + " implemented " + impl.toString());
-                break;
+        if (isJavaClass(typeToken.getRawType())) {
+            //忽略java类
+            return;
+        }
+
+        //跳过@Since并@Until 的类
+        final boolean skipSerialize = Excluder.DEFAULT.excludeClass(typeToken.getRawType(), true);
+        final boolean skipDeserialize = Excluder.DEFAULT.excludeClass(typeToken.getRawType(), false);
+        if (!skipSerialize && !skipDeserialize) {
+            return;
+        }
+
+        Object cached = typeTokenCache.get(typeToken.getRawType().getName());
+        if (cached != null) {
+            Log.i(TAG, typeToken.getRawType().getName() + " skip verify Interface");
+        } else {
+            boolean isImplemented = false;
+            Class<?> rawType = typeToken.getRawType();
+            while (rawType != null && rawType != Object.class) {
+                Type[] interfaces = rawType.getGenericInterfaces();
+                for (Type impl : interfaces) {
+                    if (impl instanceof Serializable || impl instanceof ICECBaseBean) {
+                        isImplemented = true;
+                        typeTokenCache.put(typeToken.getRawType().getName(), Object.class);
+                        Log.i(TAG, typeToken.getRawType().getName() + " implemented " + impl.toString());
+                        break;
+                    }
+                }
+                if (isImplemented) {
+                    break;
+                }
+                Type resolve = $Gson$Types.resolve(typeToken.getType(), rawType, rawType.getGenericSuperclass());
+                if (resolve == null) {
+                    break;
+                }
+                typeToken = TypeToken.get(resolve);
+                rawType = typeToken.getRawType();
+            }
+
+            if (!isImplemented) {
+                throw new IllegalArgumentException(typeToken.getRawType().getName() + " must be implemented Serializable or ICECBaseBean");
             }
         }
 
-        if (!isImplemented) {
-            throw new IllegalArgumentException(type.toString() + " must be implemented Serializable or ICECBaseBean");
-        }
 
         //处理成员变量
-        Class<?> raw = type.getRawType();
+        Class<?> raw = typeToken.getRawType();
         while (raw != Object.class) {
             Field[] fields = raw.getDeclaredFields();
             for (Field field : fields) {
                 boolean serialize = Excluder.DEFAULT.excludeField(field, true);
                 boolean deserialize = Excluder.DEFAULT.excludeField(field, false);
                 if (serialize || deserialize) {
+                    Log.i(TAG, typeToken.getRawType().getName() + "#" + field.getName() + " skip verify Interface");
                     continue;
                 }
-                Type fieldType = $Gson$Types.resolve(type.getType(), raw, field.getGenericType());
-                if (fieldType instanceof Class) {
-                    if (isBaseType(fieldType)) {
-                        //忽略基本数据类型及其封装类、String类型
-                        continue;
-                    }
-                    TypeToken<?> fileTypeToken = TypeToken.get(fieldType);
-                    verifyInterface(fileTypeToken, fileTypeToken.getRawType().getGenericInterfaces());
-                } else if (fieldType instanceof ParameterizedType) {
-                    //带泛型的集合类
-                    Type[] arguments = ((ParameterizedType) fieldType).getActualTypeArguments();
-                    verifyTypeArguments(arguments);
-                }
+                Type fieldType = $Gson$Types.resolve(typeToken.getType(), raw, field.getGenericType());
+                TypeToken<?> fileTypeToken = TypeToken.get(fieldType);
+                verifyInterface(fileTypeToken);
+
             }
-            Type resolve = $Gson$Types.resolve(type.getType(), raw, raw.getGenericSuperclass());
+            Type resolve = $Gson$Types.resolve(typeToken.getType(), raw, raw.getGenericSuperclass());
             if (resolve == null) {
                 break;
             }
-            type = TypeToken.get(resolve);
-            raw = type.getRawType();
+            typeToken = TypeToken.get(resolve);
+            raw = typeToken.getRawType();
         }
     }
 
     /**
      * 检查泛型参数
      *
-     * @param argumentType Type
+     * @param arguments Type
      */
-    private void verifyTypeArguments(Type[] argumentType) {
-        if (argumentType.length <= 0) {
+    private void verifyTypeArguments(Type[] arguments) {
+        if (arguments.length <= 0) {
             return;
         }
-        for (Type type : argumentType) {
-            TypeToken<?> fileTypeToken = TypeToken.get(type);
-            if (type instanceof Class) {
+        for (Type argument : arguments) {
+            TypeToken<?> argumentToken = TypeToken.get(argument);
+            if (argument instanceof Class) {
                 //忽略基本数据类型及其封装类、String类型
-                if (!isBaseType(type)) {
-                    verifyInterface(fileTypeToken, fileTypeToken.getRawType().getInterfaces());
-                }
-                continue;
+                verifyInterface(argumentToken);
+            } else if (argument instanceof ParameterizedType) {
+                ParameterizedType parameterizedType = (ParameterizedType) argument;
+                //检验嵌套的泛型
+                Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                verifyTypeArguments(actualTypeArguments);
             }
-
-            ParameterizedType parameterizedType = (ParameterizedType) type;
-
-            //检验嵌套的泛型
-            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-            verifyTypeArguments(actualTypeArguments);
         }
     }
 
@@ -179,9 +206,18 @@ public class CTGsonConverterFactory extends Converter.Factory {
         if (!(type instanceof Class)) {
             return false;
         }
-        return type == String.class
+        return type == Object.class
+                || type == String.class
                 || Primitives.isPrimitive(type)
                 || Primitives.isWrapperType(type);
+    }
+
+
+    /**
+     * 判断一个类是JAVA类型还是用户定义类型
+     */
+    private boolean isJavaClass(Class<?> clz) {
+        return clz != null && clz.getPackage() != null && clz.getPackage().getName().startsWith("java");
     }
 
 }
