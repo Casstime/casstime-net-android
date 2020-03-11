@@ -17,7 +17,7 @@ implementation 'com.casstime.ec:net:0.1.0'
 *初始化*
 
 ```kotlin tab='Kotlin'
-CTNetworkInitHelper.initWithApplication(application, baseUrl, isProduction)
+val config = CTNetworkConfigInitHelper.initWithApplication(application, baseUrl, isProduction)
     .apply {
         cacheStateSec = (5 * 1024 * 1024).toLong() //缓存大小
         eadTimeOut = 5* 1000 //读取超时(毫秒)
@@ -25,19 +25,21 @@ CTNetworkInitHelper.initWithApplication(application, baseUrl, isProduction)
         interceptors = arrayOf(HttpLoggingInterceptor(),  //拦截器
         CallServerInterceptor(true))
     }
+CTOkHttpClient.init(config)
 ```
 
 ```java tab='Java'
-CTNetworkInitHelper.Builder builder =
-    CTNetworkInitHelper.INSTANCE.initWithApplication(application, baseUrl, isProduction);
+CTNetworkConfigInitHelper.Config config =
+    CTNetworkConfigInitHelper.INSTANCE.initWithApplication(application, baseUrl, isProduction);
 
-builder.setCacheStateSec((8 * 1024 * 1024));//缓存大小
-builder.setConnectTimeOut(8 * 1000);//连接超时时间(毫秒)
-builder.setReadTimeOut(8 * 1000); //读取超时(毫秒)
-builder.setInterceptors (new Interceptor[]{ //拦截器
+config.setCacheStateSec((8 * 1024 * 1024));//缓存大小
+config.setConnectTimeOut(8 * 1000);//连接超时时间(毫秒)
+config.setReadTimeOut(8 * 1000); //读取超时(毫秒)
+config.setInterceptors (new Interceptor[]{ //拦截器
         new CECCommonInterceptor(),
         new OauthInterceptor(),
 });
+CTOkHttpClient.Companion.init(config);
 ```
 
 

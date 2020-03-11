@@ -5,6 +5,7 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import com.casstime.net.*;
+import com.franmontiel.persistentcookiejar.BuildConfig;
 import com.franmontiel.persistentcookiejar.PersistentCookieJar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -32,10 +33,12 @@ public class MainJavaActivity extends AppCompatActivity {
             }
         });
 
-        CTNetworkInitHelper.Builder builder = CTNetworkInitHelper.INSTANCE.initWithApplication(getApplication(), "www.casstime.com", !BuildConfig.DEBUG);
-        builder.setCacheStateSec((8 * 1024 * 1024));
-        builder.setConnectTimeOut(8);
-        builder.setReadTimeOut(8);
+        CTNetworkConfigInitHelper.Config config = CTNetworkConfigInitHelper.INSTANCE.initWithApplication(getApplication(), "www.casstime.com", !BuildConfig.DEBUG);
+        config.setCacheStateSec((8 * 1024 * 1024));
+        config.setConnectTimeOut(8);
+        config.setReadTimeOut(8);
+
+        CTOkHttpClient.Companion.init(config);
 
         CTRetrofitFactory.Companion.getInstance()
                 .create(GitHubService.class)

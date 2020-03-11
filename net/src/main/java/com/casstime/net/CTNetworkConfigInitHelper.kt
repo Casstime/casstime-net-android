@@ -8,16 +8,7 @@ import okhttp3.Interceptor
  * Created by maiwenchang at 2019-06-27 09:55
  * Description ：初始化网络模块
  */
-object CTNetworkInitHelper {
-
-    lateinit var application: Application
-        private set
-
-    lateinit var baseUrl: String
-        private set
-
-    var isIsProduction: Boolean = false
-        private set
+object CTNetworkConfigInitHelper {
 
     /**
      * 初始化入口
@@ -27,14 +18,21 @@ object CTNetworkInitHelper {
         application: Application,
         baseUrl: String,
         isProduction: Boolean
-    ): CTNetworkInitHelper.Builder {
-        this.application = application
-        this.baseUrl = baseUrl
-        isIsProduction = isProduction
-        return CTNetworkInitHelper.Builder
+    ): Config {
+        val config = Config()
+        config.application = application
+        config.baseUrl = baseUrl
+        config.isIsProduction = isProduction
+        return config
     }
 
-    object Builder {
+    class Config {
+
+        lateinit var application: Application
+
+        lateinit var baseUrl: String
+
+        var isIsProduction: Boolean = false
 
         var convertFactories: Array<retrofit2.Converter.Factory> = emptyArray()
 

@@ -5,10 +5,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import com.casstime.net.CTCookieJarManager
-import com.casstime.net.CTHttpTransformer
-import com.casstime.net.CTNetworkInitHelper
-import com.casstime.net.CTRetrofitFactory
+import com.casstime.net.*
 import com.casstime.net.example.converter.CTGsonConverterFactory
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.Observable
@@ -31,15 +28,18 @@ class MainActivity : AppCompatActivity() {
                 .setAction("Action", null).show()
         }
 
-        CTNetworkInitHelper.initWithApplication(application, "https://ec-test.casstime.com", false)
-            .apply {
-                cacheStateSec = (5 * 1024 * 1024).toLong()
-                readTimeOut = 5 * 1000
-                connectTimeOut = 5 * 1000
-                interceptors = arrayOf(HttpLoggingInterceptor())
-                convertFactories = arrayOf(CTGsonConverterFactory.create())
-            }
-
+        val config = CTNetworkConfigInitHelper.initWithApplication(
+            application,
+            "https://ec-test.casstime.com",
+            false
+        ).apply {
+            cacheStateSec = (5 * 1024 * 1024).toLong()
+            readTimeOut = 5 * 1000
+            connectTimeOut = 5 * 1000
+            interceptors = arrayOf(HttpLoggingInterceptor())
+            convertFactories = arrayOf(CTGsonConverterFactory.create())
+        }
+        CTOkHttpClient.init(config)
 
         CTRetrofitFactory.instance
             .create(GitHubService::class.java)

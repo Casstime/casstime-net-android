@@ -3,6 +3,7 @@ package com.casstime.net
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
 import com.franmontiel.persistentcookiejar.cache.SetCookieCache
 import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
+import java.lang.IllegalArgumentException
 
 
 /**
@@ -12,12 +13,19 @@ import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersisto
 class CTCookieJarManager private constructor() {
 
     private object SingletonHolder {
-        val holder: PersistentCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(CTNetworkInitHelper.application))
+        val holder: PersistentCookieJar by lazy {
+            val config = (CTOkHttpClient.config
+                ?: throw IllegalArgumentException("CTOkHttpClient.Companion.init() never been called"))
+            PersistentCookieJar(
+                SetCookieCache(),
+                SharedPrefsCookiePersistor(config.application)
+            )
+        }
     }
 
     companion object {
         val cookieJar = SingletonHolder.holder
-        fun clear(){
+        fun clear() {
             cookieJar.clear()
         }
     }
