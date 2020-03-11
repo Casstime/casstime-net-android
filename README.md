@@ -142,7 +142,12 @@ PersistentCookieJar cookieJar = CTCookieJarManager.Companion.getCookieJar();
 CTCookieJarManager.Companion.clear();
 ```
 
-
+#### 6.多实例实现
+可以通过以下方式快速构建区别于全局配置的新实例
+```kotlin tab='Kotlin'
+CTOkHttpClient.Companion.newInstance((config: CTNetworkConfigInitHelper.Config))
+CTRetrofitFactory.Companion.newInstance(baseUrl: String, okHttpClient: OkHttpClient)
+```
 
 
 
