@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
             connectTimeOut = 5 * 1000
             interceptors = arrayOf(HttpLoggingInterceptor())
             convertFactories = arrayOf(CTGsonConverterFactory.create())
+            networkInterceptors = emptyArray()
         }
         CTOkHttpClient.init(config)
 

@@ -1,6 +1,7 @@
 package com.casstime.net
 
 import android.app.Application
+import android.net.Uri
 
 import okhttp3.Interceptor
 
@@ -30,13 +31,15 @@ object CTNetworkConfigInitHelper {
 
         lateinit var application: Application
 
-        lateinit var baseUrl: String
+        var baseUrl: String = Uri.EMPTY.toString()
 
         var isIsProduction: Boolean = false
 
         var convertFactories: Array<retrofit2.Converter.Factory> = emptyArray()
 
         var interceptors: Array<Interceptor> = emptyArray()
+
+        var networkInterceptors: Array<Interceptor> = emptyArray()
 
         var cacheStateSec: Long = (10 * 1024 * 1024).toLong()
 

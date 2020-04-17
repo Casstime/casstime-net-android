@@ -62,6 +62,11 @@ class CTOkHttpClient private constructor() {
                 }
             }
             .apply {
+                for (interceptor in config.networkInterceptors) {
+                    addNetworkInterceptor(interceptor)
+                }
+            }
+            .apply {
                 val mLogInterceptor = HttpLoggingInterceptor()
                 if (config.isIsProduction && !BuildConfig.DEBUG) { // 非生产环境模式关闭Log
                     mLogInterceptor.level = HttpLoggingInterceptor.Level.NONE
