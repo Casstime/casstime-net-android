@@ -2,10 +2,10 @@ package com.casstime.net
 
 import com.franmontiel.persistentcookiejar.BuildConfig
 import okhttp3.Cache
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
-import java.lang.IllegalArgumentException
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
@@ -56,6 +56,12 @@ class CTOkHttpClient private constructor() {
         return OkHttpClient.Builder()
             .readTimeout(config.readTimeOut, TimeUnit.MILLISECONDS)
             .connectTimeout(config.connectTimeOut, TimeUnit.MILLISECONDS)
+            .apply {
+                //设置连接池数量
+                if (config.maxIdleConnections > 0) {
+                    connectionPool(ConnectionPool(config.maxIdleConnections, 5, TimeUnit.MINUTES))
+                }
+            }
             .apply {
                 for (interceptor in config.interceptors) {
                     addInterceptor(interceptor)

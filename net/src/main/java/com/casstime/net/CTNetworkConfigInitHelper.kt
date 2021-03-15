@@ -47,5 +47,7 @@ object CTNetworkConfigInitHelper {
 
         var connectTimeOut: Long = 20 * 1000
 
+        var maxIdleConnections: Int = -1
+
     }
 }
